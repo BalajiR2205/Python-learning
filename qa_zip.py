@@ -262,9 +262,9 @@ def main():
 
     # Get SSH connection details
     # hostname = input("SSH Host: ")
-    hostname = "jena.int.westgroup.com"
-    username = "ux024936"
-    password = "17bf1a05c5"
+    hostname = input("Enter hostname:");
+    username = input("Enter username:");
+    password = input("Enter password:");
     unique_code = input("Unique Code (e.g., lcmiwget): ")
 
     print(f"\n🔍 Starting scan for '{unique_code}'...")
