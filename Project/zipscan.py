@@ -53,7 +53,6 @@ def categorize_zip_files(zip_files):
 
 def list_zip_files_in_directory(ssh, directory_path):
     """List zip files in a specific directory."""
-    #print(f"Director path: {directory_path}")
     try:
         command = f"ls -1 {directory_path}*.zip 2>/dev/null"
         stdin, stdout, stderr = ssh.exec_command(command)
@@ -68,7 +67,7 @@ def list_zip_files_in_directory(ssh, directory_path):
         return []
 
 
-def scan_weekly_directories(hostname, username, password, state_code, port=22):
+def scan_directories(hostname, username, password, state_code, port=22):
     """Main function to scan all weekly directories."""
     results = []
 
@@ -82,22 +81,22 @@ def scan_weekly_directories(hostname, username, password, state_code, port=22):
                     timeout=10, compress=True)
         print("✅ Connected successfully!\n")
 
-        weekly_dirs = generate_directories(state_code)
+        directories = generate_directories(state_code)
         print("=" * 60)
 
-        for dir_info in weekly_dirs:
+        for dir_info in directories:
             parent_path = dir_info['path']
 
-            # Quick existence check and get subdirs in one operation
-            subdirs = get_subdirectories(ssh, parent_path)
+            # Quick existence check and get sub_dirs in one operation
+            sub_directories = get_subdirectories(ssh, parent_path)
 
-            if not subdirs:
+            if not sub_directories:
                 continue
 
-            print(f"📂 {dir_info['date']} ({dir_info['date_code']}): Found {len(subdirs)} subdirectories")
+            print(f"📂 {dir_info['date']} ({dir_info['date_code']}): Found {len(sub_directories)} subdirectories")
 
             # Process subdirectories
-            for subdir in subdirs:
+            for subdir in sub_directories:
                 folder_name = subdir.split('/')[-1]
                 zip_files = list_zip_files_in_directory(ssh, f"{subdir}/")
 
@@ -144,10 +143,7 @@ def main():
 
     print(f"\n🔍 Starting scan for '{state_code}'...")
 
-    # Scan directories
-    results = scan_weekly_directories(hostname, username, password, state_code)
-
-    # Display results
+    results = scan_directories(hostname, username, password, state_code)
     print("\n" + "=" * 60)
 
     if not results:
@@ -157,19 +153,14 @@ def main():
     print(f"📊 SUMMARY: Found zip files in {len(results)} locations")
     print("=" * 60)
 
-    #print(f"Final result: {results}")
-    # for result in results:
-    #     print(f"Result: {result}")
-
     for result in results:
-        # Condition 2: If more than one numeric zip file found
+        # Condition 1: If more than one zip file generated in CAS QA.
         if len(result['numeric_zips']) > 1:
             numeric_files = ', '.join([zip_file.split('/')[-1] for zip_file in result['numeric_zips']])
             alphabetic_files = ', '.join([zip_file.split('/')[-1] for zip_file in result['alphabetic_zips']])
             print(f"CAS: {numeric_files} <=> JENA: {alphabetic_files} Path: {'/'.join(result['alphabetic_zips'][0].split('/')[:-1])}")
+        # Condition 2: If only one zip file generated in CAS QA.
         elif len(result['numeric_zips']) == 1:
-            #all_files = result['numeric_zips'] + result['alphabetic_zips']
-            # print(f"\nResult: {all_files}")
             print(f"CAS: {result['numeric_zips'][0].split('/')[-1]} <=> JENA: {result['alphabetic_zips'][0].split('/')[-1]} Path: {'/'.join(result['alphabetic_zips'][0].split('/')[:-1])}")
 
     print(f"\n✨ Scan complete!")
